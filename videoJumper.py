@@ -1,17 +1,18 @@
-import cv2, numpy as np
+import cv2, numpy
 #import sys
 import sys, os, pyaudio, random
-from pocketsphinx.pocketsphinx import *
-from sphinxbase.sphinxbase import *
+from pocketsphinx import *
+#from sphinxbase import *
 from time import sleep
 import time
 
-modeldir = "/usr/share/pocketsphinx/model"
+#modeldir = "/usr/share/pocketsphinx/model"
 
 start = time.time()
 
 # Create a decoder with certain model
-config = Decoder.default_config()
+#config = Decoder.default_config()
+'''
 config.set_string('-hmm', os.path.join(modeldir, 'en-us/en-us'))
 #config.set_string('-dict', os.path.join(modeldir, 'en-us/cmudict-en-us.dict'))
 config.set_string('-allphone', os.path.join(modeldir, 'en-us/en-us-phone.lm.bin'))
@@ -20,9 +21,18 @@ config.set_float('-kws_threshold', 1e+20)
 config.set_string('-verbose', 'False')
 config.set_string('-no_search', 'False')
 config.set_string('-full_utt', 'False')
+'''
 
+# Create a default Decoder
+set_loglevel("INFO")
+ep = Endpointer()
+config = Config(samprate=ep.sample_rate,hmm='model/en-us/en-us',dict='model/en-us/cmudict-en-us.dict',allphone='model/en-us/en-us-phone.lm.bin',kws_threshold=1e+20,verbose=False)
+decoder = Decoder(config)
+width = 2
+chunk=2**12
 p = pyaudio.PyAudio()
-stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=1024)
+
+stream = p.open(format=p.get_format_from_width(width, unsigned=False), channels=1, rate=4*1024, input=True, frames_per_buffer=1024)
 stream.start_stream()
 
 def flick(x):
@@ -57,7 +67,7 @@ status = 'stay'
 
 
 # Process audio chunk by chunk. On keyphrase detected perform action and restart search
-decoder = Decoder(config)
+#decoder = Decoder(config)
 decoder.start_utt()
 
 framejump = 3
@@ -171,4 +181,7 @@ while True:
         status='play'
   except KeyError:
       print("Invalid Key was pressed")
+
 cv2.destroyWindow('image')
+stream.stop_stream()
+stream.close()
